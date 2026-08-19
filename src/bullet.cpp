@@ -5,7 +5,7 @@ Bullet::Bullet(sf::Vector2f startPos, sf::Vector2f targetPos){
     position = startPos;
     target = targetPos;
 
-    shape.setSize(sf::Vector2f(15.f,10.f));
+    shape.setRadius(5.f);
     shape.setFillColor(sf::Color::White);
 
     shape.setPosition(position);
@@ -32,4 +32,8 @@ bool Bullet::update(){
 
 void Bullet::draw(sf::RenderWindow& window){
     window.draw(shape);
+}
+
+sf::Vector2f Bullet::getPosition(){
+    return shape.getPosition();
 }

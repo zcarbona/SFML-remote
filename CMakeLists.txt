@@ -18,6 +18,7 @@ add_executable(EndlessShooter
     src/logic.cpp
     src/Player.cpp
     src/bullet.cpp
+    src/creatingOBJ.cpp
 )
 
 target_include_directories(EndlessShooter PRIVATE
