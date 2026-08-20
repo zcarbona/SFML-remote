@@ -1,5 +1,3 @@
-// creatingOBJ.hpp
-
 #pragma once
 
 #include <SFML/Graphics.hpp>
@@ -8,16 +6,19 @@ class Object
 {
 private:
     sf::RectangleShape Rectangle;
-    //sf::Text text;
+    sf::Text text;
 
     float positionX;
     float positionY;
+    int health;
 
 public:
-    Object(float screenX, float screenY);
-
-    void draw(sf::RenderWindow& window);
-    sf::Vector2f getPosition();
+    Object(float screenX, float screenY, const sf::Font& font,int number);
     
-    void setColor(sf::Color);
+    void draw(sf::RenderWindow& window);
+
+    sf::Vector2f getPosition();
+    void setColor(sf::Color color);
+    void setHealth(int amount);
+    int getHealth();
 };
