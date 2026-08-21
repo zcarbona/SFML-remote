@@ -143,6 +143,7 @@ void Object::setColor(sf::Color color)
 void Object::setHealth(int amount)
 {
     health += amount;
+    text.setString(std::to_string(health));
 }
 
 int Object::getHealth()

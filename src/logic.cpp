@@ -33,9 +33,26 @@ void Logic::run(float screenX, float screenY)
 
     Player player(screenX, screenY);
 
-    objects.emplace_back(screenX / 2.f, screenY / 2.f, font, 1);
-    objects.emplace_back(200.f, 200.f, font, 2);
-    objects.emplace_back(800.f, 400.f, font, 3);
+    objects.emplace_back(
+        screenX / 2.f - 50.f,
+        screenY / 2.f - 50.f,
+        font,
+        100
+    );
+
+    objects.emplace_back(
+        200.f,
+        200.f,
+        font,
+        100
+    );
+
+    objects.emplace_back(
+        800.f,
+        400.f,
+        font,
+        100
+    );
 
     while (window.isOpen())
     {
@@ -128,8 +145,10 @@ void Logic::run(float screenX, float screenY)
                     ) < 50.f
                 )
                 {
+                    // Damage object
                     objectIt->setHealth(-25);
 
+                    // Remove object if dead
                     if (objectIt->getHealth() <= 0)
                     {
                         objectIt = objects.erase(objectIt);
@@ -139,13 +158,16 @@ void Logic::run(float screenX, float screenY)
                         ++objectIt;
                     }
 
+                    // Bullet can only hit one object
                     bulletHit = true;
+
                     break;
                 }
 
                 ++objectIt;
             }
 
+            // Remove bullet after collision
             if (bulletHit)
             {
                 bulletIt = bullets.erase(bulletIt);
