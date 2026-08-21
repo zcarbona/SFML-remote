@@ -10,7 +10,7 @@ void Logic::run(float screenX, float screenY)
     sf::Font font;
 
     if (!font.openFromFile(
-        "C:\\Users\\Ali Mohamed\\Desktop\\SFML\\assets\\font\\GameFont.TTF"))
+        "C:\\GameFont.TTF"))
     {
         return;
     }
