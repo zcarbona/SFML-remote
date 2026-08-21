@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <chrono>
 
 class Object
 {
@@ -14,8 +15,19 @@ private:
 
     int health;
 
+    sf::Vector2f velocity;
+
+    std::chrono::steady_clock::time_point lastDirectionChange;
+
 public:
-    Object(float screenX, float screenY, const sf::Font& font, int number);
+    Object(
+        float screenX,
+        float screenY,
+        const sf::Font& font,
+        int number
+    );
+
+    void update(float screenX, float screenY);
 
     void draw(sf::RenderWindow& window);
 

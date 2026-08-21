@@ -3,7 +3,6 @@
 #include "../include/bullet.hpp"
 #include "../include/creatingOBJ.hpp"
 
-#include <string>
 #include <cmath>
 
 void Logic::run(float screenX, float screenY)
@@ -11,7 +10,7 @@ void Logic::run(float screenX, float screenY)
     sf::Font font;
 
     if (!font.openFromFile(
-            "C:\\Users\\Ali Mohamed\\Desktop\\SFML\\assets\\font\\GameFont.TTF"))
+        "C:\\Users\\Ali Mohamed\\Desktop\\SFML\\assets\\font\\GameFont.TTF"))
     {
         return;
     }
@@ -30,18 +29,20 @@ void Logic::run(float screenX, float screenY)
     );
 
     std::vector<Bullet> bullets;
+    std::vector<Object> objects;
 
     Player player(screenX, screenY);
 
-    std::vector<Object> objects;
-
-    objects.emplace_back(screenX, screenY, font, 1);
-    objects.emplace_back(screenX - 150.f, screenY + 500.f, font, 2);
-    objects.emplace_back(screenX + 200.f, screenY + 300.f, font, 3);
+    objects.emplace_back(screenX / 2.f, screenY / 2.f, font, 1);
+    objects.emplace_back(200.f, 200.f, font, 2);
+    objects.emplace_back(800.f, 400.f, font, 3);
 
     while (window.isOpen())
     {
+        // =========================
         // Input
+        // =========================
+
         while (const std::optional event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>())
@@ -50,7 +51,7 @@ void Logic::run(float screenX, float screenY)
             }
 
             if (const auto* mouse =
-                    event->getIf<sf::Event::MouseButtonPressed>())
+                event->getIf<sf::Event::MouseButtonPressed>())
             {
                 if (mouse->button == sf::Mouse::Button::Left)
                 {
@@ -65,13 +66,19 @@ void Logic::run(float screenX, float screenY)
             }
         }
 
-        // Update player
+        // =========================
+        // Update Player
+        // =========================
+
         if (player.update(screenX, screenY))
         {
             window.close();
         }
 
-        // Update bullets
+        // =========================
+        // Update Bullets
+        // =========================
+
         for (auto it = bullets.begin(); it != bullets.end();)
         {
             if (it->update())
@@ -84,7 +91,19 @@ void Logic::run(float screenX, float screenY)
             }
         }
 
+        // =========================
+        // Update Objects
+        // =========================
+
+        for (auto& object : objects)
+        {
+            object.update(screenX, screenY);
+        }
+
+        // =========================
         // Collision
+        // =========================
+
         for (auto bulletIt = bullets.begin();
              bulletIt != bullets.end();)
         {
@@ -93,22 +112,24 @@ void Logic::run(float screenX, float screenY)
             for (auto objectIt = objects.begin();
                  objectIt != objects.end();)
             {
+                float objectCenterX =
+                    objectIt->getPosition().x + 50.f;
+
+                float objectCenterY =
+                    objectIt->getPosition().y + 50.f;
+
                 if (
                     std::abs(
-                        bulletIt->getPosition().x -
-                        (objectIt->getPosition().x + 50.f)
+                        bulletIt->getPosition().x - objectCenterX
                     ) < 50.f
                     &&
                     std::abs(
-                        bulletIt->getPosition().y -
-                        (objectIt->getPosition().y + 50.f)
+                        bulletIt->getPosition().y - objectCenterY
                     ) < 50.f
                 )
                 {
-                    // Damage the object that was hit
                     objectIt->setHealth(-25);
 
-                    // Remove object if health reaches zero
                     if (objectIt->getHealth() <= 0)
                     {
                         objectIt = objects.erase(objectIt);
@@ -118,17 +139,13 @@ void Logic::run(float screenX, float screenY)
                         ++objectIt;
                     }
 
-                    // One bullet can only hit one object
                     bulletHit = true;
                     break;
                 }
-                else
-                {
-                    ++objectIt;
-                }
+
+                ++objectIt;
             }
 
-            // Remove bullet after hitting an object
             if (bulletHit)
             {
                 bulletIt = bullets.erase(bulletIt);
@@ -139,7 +156,10 @@ void Logic::run(float screenX, float screenY)
             }
         }
 
+        // =========================
         // Draw
+        // =========================
+
         window.clear(sf::Color::Black);
 
         player.draw(window);
