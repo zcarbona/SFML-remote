@@ -2,6 +2,7 @@
 #include "../include/Player.hpp"
 #include "../include/bullet.hpp"
 #include "../include/creatingOBJ.hpp"
+
 #include <string>
 #include <cmath>
 
@@ -9,7 +10,8 @@ void Logic::run(float screenX, float screenY)
 {
     sf::Font font;
 
-    if (!font.openFromFile("C:\\Users\\Ali Mohamed\\Desktop\\SFML\\assets\\font\\GameFont.TTF"))
+    if (!font.openFromFile(
+            "C:\\Users\\Ali Mohamed\\Desktop\\SFML\\assets\\font\\GameFont.TTF"))
     {
         return;
     }
@@ -47,7 +49,8 @@ void Logic::run(float screenX, float screenY)
                 window.close();
             }
 
-            if (const auto* mouse = event->getIf<sf::Event::MouseButtonPressed>())
+            if (const auto* mouse =
+                    event->getIf<sf::Event::MouseButtonPressed>())
             {
                 if (mouse->button == sf::Mouse::Button::Left)
                 {
@@ -82,11 +85,13 @@ void Logic::run(float screenX, float screenY)
         }
 
         // Collision
-        for (auto bulletIt = bullets.begin(); bulletIt != bullets.end();)
+        for (auto bulletIt = bullets.begin();
+             bulletIt != bullets.end();)
         {
             bool bulletHit = false;
 
-            for (auto objectIt = objects.begin(); objectIt != objects.end();)
+            for (auto objectIt = objects.begin();
+                 objectIt != objects.end();)
             {
                 if (
                     std::abs(
@@ -100,7 +105,7 @@ void Logic::run(float screenX, float screenY)
                     ) < 50.f
                 )
                 {
-                    // Damage the object that was actually hit
+                    // Damage the object that was hit
                     objectIt->setHealth(-25);
 
                     // Remove object if health reaches zero
@@ -113,7 +118,7 @@ void Logic::run(float screenX, float screenY)
                         ++objectIt;
                     }
 
-                    // Bullet can only hit one object
+                    // One bullet can only hit one object
                     bulletHit = true;
                     break;
                 }

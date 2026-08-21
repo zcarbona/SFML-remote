@@ -10,12 +10,14 @@ Object::Object(
 {
     positionX = screenX / 2.f;
     positionY = screenY / 2.f;
+
     health = 100;
+
     Rectangle.setSize({100.f, 100.f});
     Rectangle.setPosition({positionX, positionY});
     Rectangle.setFillColor(sf::Color::Blue);
 
-    text.setString(std::to_string(100));
+    text.setString(std::to_string(health));
     text.setCharacterSize(30);
     text.setFillColor(sf::Color::White);
 
@@ -41,10 +43,14 @@ void Object::setColor(sf::Color color)
     Rectangle.setFillColor(color);
 }
 
-void Object::setHealth(int amount){
+void Object::setHealth(int amount)
+{
     health += amount;
+
+    text.setString(std::to_string(health));
 }
 
-int Object::getHealth(){
+int Object::getHealth()
+{
     return health;
 }
