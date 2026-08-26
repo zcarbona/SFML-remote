@@ -1,17 +1,23 @@
 #include "../include/logic.hpp"
+
 #include "../include/Player.hpp"
 #include "../include/bullet.hpp"
 #include "../include/creatingOBJ.hpp"
 
 #include <cmath>
+#include <chrono>
+#include <random>
+#include <algorithm>
 
 void Logic::run(float screenX, float screenY)
 {
     sf::Font font;
 
-    if (!font.openFromFile(
-        "C:\\GameFont.TTF"))
+    // Load the bundled font from the game's assets folder.
+    if (!font.openFromFile("assets/font/GameFont.TTF"))
     {
+        std::cerr << "Failed to load font: assets/font/GameFont.TTF"
+                  << std::endl;
         return;
     }
 
@@ -28,31 +34,67 @@ void Logic::run(float screenX, float screenY)
         settings
     );
 
+    window.setFramerateLimit(60);
+
     std::vector<Bullet> bullets;
     std::vector<Object> objects;
 
     Player player(screenX, screenY);
 
-    objects.emplace_back(
-        screenX / 2.f - 50.f,
-        screenY / 2.f - 50.f,
-        font,
-        100
+    int level = 1;
+
+    auto levelStart = std::chrono::steady_clock::now();
+
+    std::random_device rd;
+    std::mt19937 spawnGen(rd());
+
+    std::uniform_real_distribution<float> spawnX(
+        0.f,
+        screenX - 100.f
     );
 
-    objects.emplace_back(
-        200.f,
-        200.f,
-        font,
-        100
+    std::uniform_real_distribution<float> spawnY(
+        0.f,
+        screenY - 100.f
     );
 
-    objects.emplace_back(
-        800.f,
-        400.f,
-        font,
-        100
-    );
+    auto spawnInitialWave = [&]()
+    {
+        objects.clear();
+
+        objects.emplace_back(
+            screenX / 2.f - 50.f,
+            screenY / 2.f - 50.f,
+            font,
+            level
+        );
+
+        objects.emplace_back(
+            200.f,
+            200.f,
+            font,
+            level
+        );
+
+        objects.emplace_back(
+            800.f,
+            400.f,
+            font,
+            level
+        );
+    };
+
+    spawnInitialWave();
+
+    sf::Vector2f mouseWorldPos = player.getCenter();
+
+    sf::Text hud(font);
+
+    hud.setCharacterSize(24);
+    hud.setFillColor(sf::Color::White);
+    hud.setPosition({10.f, 10.f});
+
+    bool gameOver = false;
 
     while (window.isOpen())
     {
@@ -68,115 +110,247 @@ void Logic::run(float screenX, float screenY)
             }
 
             if (const auto* mouse =
-                event->getIf<sf::Event::MouseButtonPressed>())
+                    event->getIf<sf::Event::MouseButtonPressed>())
             {
-                if (mouse->button == sf::Mouse::Button::Left)
+                if (
+                    mouse->button == sf::Mouse::Button::Left &&
+                    !gameOver
+                )
                 {
-                    sf::Vector2f mousePos =
+                    sf::Vector2f clickPos =
                         window.mapPixelToCoords(mouse->position);
 
                     bullets.emplace_back(
-                        player.getPosition(),
-                        mousePos
+                        player.getBarrelTip(),
+                        clickPos
                     );
                 }
             }
         }
 
+        mouseWorldPos =
+            window.mapPixelToCoords(
+                sf::Mouse::getPosition(window)
+            );
+
         // =========================
-        // Update Player
+        // Game Over / Restart
         // =========================
 
-        if (player.update(screenX, screenY))
+        if (gameOver)
         {
-            window.close();
-        }
-
-        // =========================
-        // Update Bullets
-        // =========================
-
-        for (auto it = bullets.begin(); it != bullets.end();)
-        {
-            if (it->update())
+            if (sf::Keyboard::isKeyPressed(
+                    sf::Keyboard::Key::R))
             {
-                it = bullets.erase(it);
+                player = Player(screenX, screenY);
+
+                bullets.clear();
+
+                level = 1;
+
+                levelStart =
+                    std::chrono::steady_clock::now();
+
+                spawnInitialWave();
+
+                gameOver = false;
             }
-            else
+        }
+        else
+        {
+            // =========================
+            // Update Player
+            // =========================
+
+            if (player.update(
+                    screenX,
+                    screenY,
+                    mouseWorldPos))
             {
-                ++it;
+                window.close();
             }
-        }
 
-        // =========================
-        // Update Objects
-        // =========================
-
-        for (auto& object : objects)
-        {
-            object.update(screenX, screenY);
-        }
-
-        // =========================
-        // Collision
-        // =========================
-
-        for (auto bulletIt = bullets.begin();
-             bulletIt != bullets.end();)
-        {
-            bool bulletHit = false;
-
-            for (auto objectIt = objects.begin();
-                 objectIt != objects.end();)
+            if (!player.isAlive())
             {
-                float objectCenterX =
-                    objectIt->getPosition().x + 50.f;
+                gameOver = true;
+            }
 
-                float objectCenterY =
-                    objectIt->getPosition().y + 50.f;
+            // =========================
+            // Leveling
+            // =========================
 
-                if (
-                    std::abs(
-                        bulletIt->getPosition().x - objectCenterX
-                    ) < 50.f
-                    &&
-                    std::abs(
-                        bulletIt->getPosition().y - objectCenterY
-                    ) < 50.f
-                )
+            int levelUpSeconds =
+                std::max(5, 15 - level);
+
+            auto elapsedLevel =
+                std::chrono::duration_cast<
+                    std::chrono::seconds
+                >(
+                    std::chrono::steady_clock::now() -
+                    levelStart
+                ).count();
+
+            if (elapsedLevel >= levelUpSeconds)
+            {
+                level++;
+
+                levelStart =
+                    std::chrono::steady_clock::now();
+
+                objects.emplace_back(
+                    spawnX(spawnGen),
+                    spawnY(spawnGen),
+                    font,
+                    level
+                );
+            }
+
+            // =========================
+            // Update Bullets
+            // =========================
+
+            for (auto it = bullets.begin();
+                 it != bullets.end();)
+            {
+                if (it->update())
                 {
-                    // Damage object
-                    objectIt->setHealth(-25);
+                    it = bullets.erase(it);
+                }
+                else
+                {
+                    ++it;
+                }
+            }
 
-                    // Remove object if dead
-                    if (objectIt->getHealth() <= 0)
+            // =========================
+            // Update Objects
+            // =========================
+
+            sf::Vector2f playerCenter =
+                player.getCenter();
+
+            for (auto& object : objects)
+            {
+                object.update(
+                    screenX,
+                    screenY,
+                    playerCenter,
+                    level
+                );
+            }
+
+            // =========================
+            // Bullet vs Enemy Collision
+            // =========================
+
+            for (auto bulletIt = bullets.begin();
+                 bulletIt != bullets.end();)
+            {
+                bool bulletHit = false;
+
+                for (auto objectIt = objects.begin();
+                     objectIt != objects.end();)
+                {
+                    float objectCenterX =
+                        objectIt->getPosition().x + 50.f;
+
+                    float objectCenterY =
+                        objectIt->getPosition().y + 50.f;
+
+                    if (
+                        std::abs(
+                            bulletIt->getPosition().x -
+                            objectCenterX
+                        ) < 50.f
+                        &&
+                        std::abs(
+                            bulletIt->getPosition().y -
+                            objectCenterY
+                        ) < 50.f
+                    )
                     {
-                        objectIt = objects.erase(objectIt);
-                    }
-                    else
-                    {
-                        ++objectIt;
+                        objectIt->setHealth(-25);
+
+                        if (objectIt->getHealth() <= 0)
+                        {
+                            objectIt =
+                                objects.erase(objectIt);
+                        }
+                        else
+                        {
+                            ++objectIt;
+                        }
+
+                        bulletHit = true;
+
+                        break;
                     }
 
-                    // Bullet can only hit one object
-                    bulletHit = true;
-
-                    break;
+                    ++objectIt;
                 }
 
-                ++objectIt;
+                if (bulletHit)
+                {
+                    bulletIt =
+                        bullets.erase(bulletIt);
+                }
+                else
+                {
+                    ++bulletIt;
+                }
             }
 
-            // Remove bullet after collision
-            if (bulletHit)
+            // =========================
+            // Enemy vs Player Collision
+            // Only a charging run hurts you
+            // =========================
+
+            for (auto& object : objects)
             {
-                bulletIt = bullets.erase(bulletIt);
-            }
-            else
-            {
-                ++bulletIt;
+                float objectCenterX =
+                    object.getPosition().x + 50.f;
+
+                float objectCenterY =
+                    object.getPosition().y + 50.f;
+
+                if (
+                    object.isCharging()
+                    &&
+                    std::abs(
+                        playerCenter.x -
+                        objectCenterX
+                    ) < 125.f
+                    &&
+                    std::abs(
+                        playerCenter.y -
+                        objectCenterY
+                    ) < 100.f
+                )
+                {
+                    player.takeDamage(
+                        object.getDamage(level)
+                    );
+
+                    object.forceRetreat();
+                }
             }
         }
+
+        // =========================
+        // HUD
+        // =========================
+
+        hud.setString(
+            "Level: " +
+            std::to_string(level) +
+            "   Health: " +
+            std::to_string(player.getHealth()) +
+            (
+                gameOver
+                    ? "   -- GAME OVER -- press R to restart"
+                    : ""
+            )
+        );
 
         // =========================
         // Draw
@@ -195,6 +369,8 @@ void Logic::run(float screenX, float screenY)
         {
             bullet.draw(window);
         }
+
+        window.draw(hud);
 
         window.display();
     }
